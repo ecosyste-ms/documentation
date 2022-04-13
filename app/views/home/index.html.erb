@@ -1,0 +1,26 @@
+<div class="container-sm">
+  <% @services.each do |service| %>
+    <div class="card mb-3 registry d-flex">
+      <div class="card-body pb-1">
+        <div class="d-flex">
+          
+          <div class="flex-grow-1 ms-3 text-break">
+            <h5 class='card-title'>
+              <%= link_to service[:name], service[:url], target: :_blank %>
+              <% if service[:repo] %>
+                <%= link_to bootstrap_icon('github', height: 20), "https://github.com/ecosyste-ms/#{service[:repo]}", target: :_blank %>
+              <% end %>
+            </h5>
+          
+            <p class="card-subtitle mb-2 text-muted">
+              <%= service[:description] %>
+            </p>
+          </div>
+          <div class="flex-shrink-0">
+            <%= bootstrap_icon service[:icon], width: 40, height: 40 %>
+          </div>  
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
