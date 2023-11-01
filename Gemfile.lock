@@ -154,7 +154,7 @@ GEM
       stringio
     puma (6.4.0)
       nio4r (~> 2.0)
-    racc (1.7.1)
+    racc (1.7.2)
     rack (3.0.8)
     rack-session (2.0.0)
       rack (>= 3.0.0)
