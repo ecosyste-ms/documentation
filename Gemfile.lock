@@ -78,7 +78,7 @@ GEM
     autoprefixer-rails (10.4.19.0)
       execjs (~> 2)
     base64 (0.2.0)
-    benchmark (0.3.0)
+    benchmark (0.4.0)
     bigdecimal (3.1.8)
     bootstrap (5.3.3)
       autoprefixer-rails (>= 9.1.0)
