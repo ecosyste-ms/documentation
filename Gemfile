@@ -6,7 +6,7 @@ ruby file: ".ruby-version"
 gem "rails", "~> 8.0.0"
 gem "sprockets-rails"
 gem "pg", "~> 1.5"
-gem "puma", "~> 6.4"
+gem "puma", "~> 6.6"
 gem "jbuilder"
 gem "sassc-rails"
 gem 'bootstrap'
