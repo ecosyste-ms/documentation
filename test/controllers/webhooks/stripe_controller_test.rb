@@ -76,7 +76,7 @@ module Webhooks
       post '/webhooks/stripe', params: payload, headers: { 'Content-Type' => 'application/json' }
     end
 
-    assert_response :ok  # Still returns 200 so Stripe doesn't retry
+    assert_response :internal_server_error
     stripe_event = StripeEvent.last
     assert_equal 'failed', stripe_event.status
     assert_not_nil stripe_event.error_message
@@ -87,9 +87,15 @@ module Webhooks
     stripe_subscription = mock('subscription')
     stripe_subscription.stubs(:id).returns('sub_123')
     stripe_subscription.stubs(:status).returns('active')
-    stripe_subscription.stubs(:current_period_start).returns(Time.current.to_i)
-    stripe_subscription.stubs(:current_period_end).returns(1.month.from_now.to_i)
     stripe_subscription.stubs(:cancel_at_period_end).returns(false)
+
+    item = mock('subscription_item')
+    item.stubs(:current_period_start).returns(Time.current.to_i)
+    item.stubs(:current_period_end).returns(1.month.from_now.to_i)
+
+    items = mock('items')
+    items.stubs(:data).returns([item])
+    stripe_subscription.stubs(:items).returns(items)
 
     event_data = mock('event_data')
     event_data.stubs(:object).returns(stripe_subscription)
@@ -174,15 +180,22 @@ module Webhooks
       stripe_invoice = mock('invoice')
       stripe_invoice.stubs(:id).returns('in_123')
       stripe_invoice.stubs(:customer).returns('cus_123')
-      stripe_invoice.stubs(:subscription).returns('sub_123')
       stripe_invoice.stubs(:number).returns('INV-001')
+      stripe_invoice.stubs(:status).returns('paid')
       stripe_invoice.stubs(:amount_due).returns(1000)
       stripe_invoice.stubs(:amount_paid).returns(1000)
       stripe_invoice.stubs(:currency).returns('usd')
       stripe_invoice.stubs(:period_start).returns(Time.current.to_i)
       stripe_invoice.stubs(:period_end).returns(1.month.from_now.to_i)
+      stripe_invoice.stubs(:due_date).returns(nil)
       stripe_invoice.stubs(:hosted_invoice_url).returns('https://invoice.stripe.com/i/123')
       stripe_invoice.stubs(:invoice_pdf).returns('https://invoice.stripe.com/i/123/pdf')
+
+      subscription_details = mock('subscription_details')
+      subscription_details.stubs(:subscription).returns('sub_123')
+      parent = mock('parent')
+      parent.stubs(:subscription_details).returns(subscription_details)
+      stripe_invoice.stubs(:parent).returns(parent)
 
       status_transitions = mock('status_transitions')
       status_transitions.stubs(:paid_at).returns(Time.current.to_i)
@@ -208,14 +221,15 @@ module Webhooks
       invoice = @account.invoices.last
       assert_equal 'paid', invoice.status
       assert_equal 1000, invoice.amount_due_cents
+      assert_equal @subscription, invoice.subscription
     end
 
     test 'handles invoice.payment_failed event' do
       stripe_invoice = mock('invoice')
       stripe_invoice.stubs(:id).returns('in_123')
       stripe_invoice.stubs(:customer).returns('cus_123')
-      stripe_invoice.stubs(:subscription).returns('sub_123')
       stripe_invoice.stubs(:number).returns('INV-001')
+      stripe_invoice.stubs(:status).returns('open')
       stripe_invoice.stubs(:amount_due).returns(1000)
       stripe_invoice.stubs(:amount_paid).returns(0)
       stripe_invoice.stubs(:currency).returns('usd')
@@ -225,6 +239,12 @@ module Webhooks
       stripe_invoice.stubs(:hosted_invoice_url).returns('https://invoice.stripe.com/i/123')
       stripe_invoice.stubs(:invoice_pdf).returns('https://invoice.stripe.com/i/123/pdf')
       stripe_invoice.stubs(:status_transitions).returns(nil)
+
+      subscription_details = mock('subscription_details')
+      subscription_details.stubs(:subscription).returns('sub_123')
+      parent = mock('parent')
+      parent.stubs(:subscription_details).returns(subscription_details)
+      stripe_invoice.stubs(:parent).returns(parent)
 
       event_data = mock('event_data')
       event_data.stubs(:object).returns(stripe_invoice)

@@ -41,12 +41,8 @@ module Webhooks
           handle_subscription_updated(event.data.object)
         when 'customer.subscription.deleted'
           handle_subscription_deleted(event.data.object)
-        when 'invoice.payment_succeeded'
-          handle_invoice_payment_succeeded(event.data.object)
-        when 'invoice.payment_failed'
-          handle_invoice_payment_failed(event.data.object)
-        when 'invoice.finalized'
-          handle_invoice_finalized(event.data.object)
+        when 'invoice.payment_succeeded', 'invoice.payment_failed', 'invoice.finalized'
+          handle_invoice(event.data.object)
         else
           Rails.logger.info "[Stripe Webhook] Unhandled event type: #{event.type}"
         end
@@ -57,13 +53,12 @@ module Webhooks
         stripe_event.mark_as_failed!(e)
         Rails.logger.error "[Stripe Webhook] Failed to process event #{event.id}: #{e.class} - #{e.message}"
         Rails.logger.error e.backtrace.first(5).join("\n")
-        # Still return 200 so Stripe doesn't retry
+        render json: { error: 'Webhook processing failed' }, status: :internal_server_error
+        return
       end
 
       render json: { received: true }, status: :ok
     end
-
-    private
 
     def handle_subscription_created(stripe_subscription)
       stripe_subscription = fetch_object_if_needed(stripe_subscription, Stripe::Subscription)
@@ -92,103 +87,23 @@ module Webhooks
       end
     end
 
-    def handle_invoice_payment_succeeded(stripe_invoice)
-      # Fetch full object if thin payload
+    def handle_invoice(stripe_invoice)
       stripe_invoice = fetch_object_if_needed(stripe_invoice, Stripe::Invoice)
 
-      customer_id = stripe_invoice.customer.is_a?(String) ? stripe_invoice.customer : stripe_invoice.customer.id
+      customer_id = Invoice.stripe_customer_id(stripe_invoice)
       account = Account.find_by(stripe_customer_id: customer_id)
       unless account
         Rails.logger.warn "[Stripe Webhook] Account not found for customer #{customer_id}"
         return
       end
 
-      subscription_id = stripe_invoice.subscription.is_a?(String) ? stripe_invoice.subscription : stripe_invoice.subscription.id
+      subscription_id = Invoice.stripe_subscription_id(stripe_invoice)
       subscription = account.subscriptions.find_by(stripe_subscription_id: subscription_id)
 
       invoice = account.invoices.find_or_initialize_by(stripe_invoice_id: stripe_invoice.id)
-      invoice.assign_attributes(
-        subscription: subscription,
-        number: stripe_invoice.number,
-        status: 'paid',
-        amount_due_cents: stripe_invoice.amount_due,
-        amount_paid_cents: stripe_invoice.amount_paid,
-        currency: stripe_invoice.currency,
-        period_start: stripe_invoice.period_start ? Time.at(stripe_invoice.period_start) : nil,
-        period_end: stripe_invoice.period_end ? Time.at(stripe_invoice.period_end) : nil,
-        paid_at: stripe_invoice.status_transitions&.paid_at ? Time.at(stripe_invoice.status_transitions.paid_at) : Time.current,
-        hosted_invoice_url: stripe_invoice.hosted_invoice_url,
-        invoice_pdf_url: stripe_invoice.invoice_pdf
-      )
-      invoice.save!
+      invoice.sync_from_stripe(stripe_invoice, subscription: subscription)
 
-      Rails.logger.info "[Stripe Webhook] Invoice #{invoice.id} marked as paid"
-    end
-
-    def handle_invoice_payment_failed(stripe_invoice)
-      # Fetch full object if thin payload
-      stripe_invoice = fetch_object_if_needed(stripe_invoice, Stripe::Invoice)
-
-      customer_id = stripe_invoice.customer.is_a?(String) ? stripe_invoice.customer : stripe_invoice.customer.id
-      account = Account.find_by(stripe_customer_id: customer_id)
-      unless account
-        Rails.logger.warn "[Stripe Webhook] Account not found for customer #{customer_id}"
-        return
-      end
-
-      subscription_id = stripe_invoice.subscription.is_a?(String) ? stripe_invoice.subscription : stripe_invoice.subscription.id
-      subscription = account.subscriptions.find_by(stripe_subscription_id: subscription_id)
-
-      invoice = account.invoices.find_or_initialize_by(stripe_invoice_id: stripe_invoice.id)
-      invoice.assign_attributes(
-        subscription: subscription,
-        number: stripe_invoice.number,
-        status: 'open',
-        amount_due_cents: stripe_invoice.amount_due,
-        amount_paid_cents: stripe_invoice.amount_paid,
-        currency: stripe_invoice.currency,
-        period_start: stripe_invoice.period_start ? Time.at(stripe_invoice.period_start) : nil,
-        period_end: stripe_invoice.period_end ? Time.at(stripe_invoice.period_end) : nil,
-        due_date: stripe_invoice.due_date ? Time.at(stripe_invoice.due_date) : nil,
-        hosted_invoice_url: stripe_invoice.hosted_invoice_url,
-        invoice_pdf_url: stripe_invoice.invoice_pdf
-      )
-      invoice.save!
-
-      Rails.logger.warn "[Stripe Webhook] Invoice #{invoice.id} payment failed"
-    end
-
-    def handle_invoice_finalized(stripe_invoice)
-      # Fetch full object if thin payload
-      stripe_invoice = fetch_object_if_needed(stripe_invoice, Stripe::Invoice)
-
-      customer_id = stripe_invoice.customer.is_a?(String) ? stripe_invoice.customer : stripe_invoice.customer.id
-      account = Account.find_by(stripe_customer_id: customer_id)
-      unless account
-        Rails.logger.warn "[Stripe Webhook] Account not found for customer #{customer_id}"
-        return
-      end
-
-      subscription_id = stripe_invoice.subscription.is_a?(String) ? stripe_invoice.subscription : stripe_invoice.subscription.id
-      subscription = account.subscriptions.find_by(stripe_subscription_id: subscription_id)
-
-      invoice = account.invoices.find_or_initialize_by(stripe_invoice_id: stripe_invoice.id)
-      invoice.assign_attributes(
-        subscription: subscription,
-        number: stripe_invoice.number,
-        status: stripe_invoice.status,
-        amount_due_cents: stripe_invoice.amount_due,
-        amount_paid_cents: stripe_invoice.amount_paid || 0,
-        currency: stripe_invoice.currency,
-        period_start: stripe_invoice.period_start ? Time.at(stripe_invoice.period_start) : nil,
-        period_end: stripe_invoice.period_end ? Time.at(stripe_invoice.period_end) : nil,
-        due_date: stripe_invoice.due_date ? Time.at(stripe_invoice.due_date) : nil,
-        hosted_invoice_url: stripe_invoice.hosted_invoice_url,
-        invoice_pdf_url: stripe_invoice.invoice_pdf
-      )
-      invoice.save!
-
-      Rails.logger.info "[Stripe Webhook] Invoice #{invoice.id} finalized"
+      Rails.logger.info "[Stripe Webhook] Synced invoice #{invoice.id} (#{invoice.status})"
     end
 
     def update_subscription_from_stripe(stripe_subscription)

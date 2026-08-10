@@ -65,7 +65,7 @@ class StripeService
 
     {
       subscription: subscription,
-      client_secret: stripe_subscription.latest_invoice&.confirmation_secret
+      client_secret: stripe_subscription.latest_invoice&.confirmation_secret&.client_secret
     }
   rescue Stripe::StripeError => e
     Rails.logger.error "[StripeService] Error creating subscription: #{e.message}"

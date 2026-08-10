@@ -72,8 +72,11 @@ class StripeServiceTest < ActiveSupport::TestCase
     items = mock('items')
     items.stubs(:data).returns([item])
 
+    confirmation_secret = mock('confirmation_secret')
+    confirmation_secret.stubs(:client_secret).returns('pi_secret_123')
+
     invoice = mock('invoice')
-    invoice.stubs(:confirmation_secret).returns(nil)
+    invoice.stubs(:confirmation_secret).returns(confirmation_secret)
 
     subscription = mock('subscription')
     subscription.stubs(:id).returns('sub_123')
@@ -91,6 +94,7 @@ class StripeServiceTest < ActiveSupport::TestCase
 
     assert result[:subscription].persisted?
     assert_equal 'sub_123', result[:subscription].stripe_subscription_id
+    assert_equal 'pi_secret_123', result[:client_secret]
     assert_equal 'Visa', @account.reload.payment_method_type
     assert_equal '4242', @account.payment_method_last4
   end
