@@ -88,7 +88,13 @@ class StripeServiceTest < ActiveSupport::TestCase
     @service.stubs(:create_or_retrieve_customer).returns(customer)
     Stripe::PaymentMethod.expects(:attach).with('pm_123', { customer: 'cus_123' }).returns(payment_method)
     Stripe::Customer.expects(:update).with('cus_123', invoice_settings: { default_payment_method: 'pm_123' })
-    Stripe::Subscription.expects(:create).returns(subscription)
+    Stripe::Subscription.expects(:create).with(
+      customer: 'cus_123',
+      items: [{ price: 'price_123' }],
+      payment_behavior: 'default_incomplete',
+      payment_settings: { save_default_payment_method: 'on_subscription' },
+      expand: ['latest_invoice.confirmation_secret', 'items.data']
+    ).returns(subscription)
 
     result = @service.create_subscription(plan: @plan, payment_method_id: 'pm_123')
 
