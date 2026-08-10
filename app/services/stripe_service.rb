@@ -48,7 +48,7 @@ class StripeService
       items: [{ price: plan.stripe_price_id }],
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription' },
-      expand: ['latest_invoice', 'items.data']
+      expand: ['latest_invoice.confirmation_secret', 'items.data']
     )
 
     # Create local subscription record
@@ -65,7 +65,7 @@ class StripeService
 
     {
       subscription: subscription,
-      client_secret: stripe_subscription.latest_invoice&.confirmation_secret
+      client_secret: stripe_subscription.latest_invoice&.confirmation_secret&.client_secret
     }
   rescue Stripe::StripeError => e
     Rails.logger.error "[StripeService] Error creating subscription: #{e.message}"

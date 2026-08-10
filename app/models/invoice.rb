@@ -73,4 +73,46 @@ class Invoice < ApplicationRecord
   def invoice_url
     hosted_invoice_url || "#"
   end
+
+  def sync_from_stripe(stripe_invoice, subscription: nil)
+    assign_attributes(
+      self.class.stripe_attributes(stripe_invoice).merge(subscription: subscription)
+    )
+    save!
+  end
+
+  def self.stripe_attributes(stripe_invoice)
+    paid_at = stripe_invoice.status_transitions&.paid_at
+
+    {
+      number: stripe_invoice.number,
+      status: stripe_invoice.status,
+      amount_due_cents: stripe_invoice.amount_due,
+      amount_paid_cents: stripe_invoice.amount_paid || 0,
+      currency: stripe_invoice.currency,
+      period_start: stripe_time(stripe_invoice.period_start),
+      period_end: stripe_time(stripe_invoice.period_end),
+      due_date: stripe_time(stripe_invoice.due_date),
+      paid_at: stripe_time(paid_at),
+      hosted_invoice_url: stripe_invoice.hosted_invoice_url,
+      invoice_pdf_url: stripe_invoice.invoice_pdf
+    }
+  end
+
+  def self.stripe_customer_id(stripe_invoice)
+    stripe_object_id(stripe_invoice.customer)
+  end
+
+  def self.stripe_subscription_id(stripe_invoice)
+    subscription = stripe_invoice.parent&.subscription_details&.subscription
+    stripe_object_id(subscription)
+  end
+
+  def self.stripe_object_id(stripe_object)
+    stripe_object.is_a?(String) ? stripe_object : stripe_object&.id
+  end
+
+  def self.stripe_time(timestamp)
+    Time.at(timestamp) if timestamp
+  end
 end

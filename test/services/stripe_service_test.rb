@@ -72,8 +72,11 @@ class StripeServiceTest < ActiveSupport::TestCase
     items = mock('items')
     items.stubs(:data).returns([item])
 
+    confirmation_secret = mock('confirmation_secret')
+    confirmation_secret.stubs(:client_secret).returns('pi_secret_123')
+
     invoice = mock('invoice')
-    invoice.stubs(:confirmation_secret).returns(nil)
+    invoice.stubs(:confirmation_secret).returns(confirmation_secret)
 
     subscription = mock('subscription')
     subscription.stubs(:id).returns('sub_123')
@@ -85,12 +88,19 @@ class StripeServiceTest < ActiveSupport::TestCase
     @service.stubs(:create_or_retrieve_customer).returns(customer)
     Stripe::PaymentMethod.expects(:attach).with('pm_123', { customer: 'cus_123' }).returns(payment_method)
     Stripe::Customer.expects(:update).with('cus_123', invoice_settings: { default_payment_method: 'pm_123' })
-    Stripe::Subscription.expects(:create).returns(subscription)
+    Stripe::Subscription.expects(:create).with(
+      customer: 'cus_123',
+      items: [{ price: 'price_123' }],
+      payment_behavior: 'default_incomplete',
+      payment_settings: { save_default_payment_method: 'on_subscription' },
+      expand: ['latest_invoice.confirmation_secret', 'items.data']
+    ).returns(subscription)
 
     result = @service.create_subscription(plan: @plan, payment_method_id: 'pm_123')
 
     assert result[:subscription].persisted?
     assert_equal 'sub_123', result[:subscription].stripe_subscription_id
+    assert_equal 'pi_secret_123', result[:client_secret]
     assert_equal 'Visa', @account.reload.payment_method_type
     assert_equal '4242', @account.payment_method_last4
   end
