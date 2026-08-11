@@ -40,7 +40,7 @@ GEM
       public_suffix (>= 2.0.2, < 8.0)
     anonymous_loader (0.1.3)
       version_gem (~> 1.1, >= 1.1.14)
-    appsignal (4.9.1)
+    appsignal (4.10.0)
       logger
       rack (>= 2.0.0)
     auth-sanitizer (0.2.3)
@@ -253,7 +253,7 @@ GEM
       actionpack (>= 6.1)
       activesupport (>= 6.1)
       sprockets (>= 3.0.0)
-    stripe (19.4.0)
+    stripe (19.5.0)
       bigdecimal
       logger
     thor (1.5.0)
@@ -322,7 +322,7 @@ CHECKSUMS
   activesupport (8.1.3.1) sha256=85458765f25ea48b9019c46b6bb3fa5683197bf4280d9f06710a6e8d7a831376
   addressable (2.9.0) sha256=7fdf6ac3660f7f4e867a0838be3f6cf722ace541dd97767fa42bc6cfa980c7af
   anonymous_loader (0.1.3) sha256=084a18e2439144d955447dc11dfc982f41fcd1583ad32d4d55151325dc44cb55
-  appsignal (4.9.1) sha256=1f20b7b80f60fa1fa6b9e6e0c1bfbde7435e73ce4197a5c0f00ee4a2c562033d
+  appsignal (4.10.0) sha256=a73d4c34ac3eef231b549e375fe5911a39138a0e16a52e5c059d6aef9142cdec
   auth-sanitizer (0.2.3) sha256=db10aac92cfbe4c64ab637eebcbe1d67395d1694798041362173370f59933e3c
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   bcrypt (3.1.22) sha256=1f0072e88c2d705d94aff7f2c5cb02eb3f1ec4b8368671e19112527489f29032
@@ -424,7 +424,7 @@ CHECKSUMS
   snaky_hash (2.0.7) sha256=7d02c70012a3f932e48860cd024577908300c9aa615e0cb9b450aaa749cbcb4d
   sprockets (4.2.2) sha256=761e5a49f1c288704763f73139763564c845a8f856d52fba013458f8af1b59b1
   sprockets-rails (3.5.2) sha256=a9e88e6ce9f8c912d349aa5401509165ec42326baf9e942a85de4b76dbc4119e
-  stripe (19.4.0) sha256=848807275094285e102aa2c9eeff38f4d5a5e2a293027bf5a2fea8cda38f7cc5
+  stripe (19.5.0) sha256=04d7bf83c65e5021cfc94bac92f2dd95d3843dcd70cac1cb8362757398bf5aaf
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   tilt (2.8.0) sha256=ba472eb2716fe1e04112d6d219a9dae938ec09a6a1e2ad3ecc7922e79bde3721
   timeout (0.6.1) sha256=78f57368a7e7bbadec56971f78a3f5ecbcfb59b7fcbb0a3ed6ddc08a5094accb
