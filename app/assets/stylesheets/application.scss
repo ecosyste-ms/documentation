@@ -318,6 +318,19 @@
     padding-top: 5rem;
     padding-bottom: 5rem;
   }
+
+  /*
+   * Once the viewport is wide enough to hold the text column and the 852px dashboard
+   * side by side, anchor the dashboard to the right edge at its natural size and narrow
+   * the text column to make room. Below this it bleeds off the right, as before.
+   */
+  @media (min-width: 1340px) {
+    background-position-x: right;
+
+    .commercial-home__intro {
+      width: 33.333333%;
+    }
+  }
 }
 
 .commercial-hero {
