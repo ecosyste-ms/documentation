@@ -96,6 +96,21 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select 'a.btn', text: 'Sign in to choose'
   end
 
+  test 'renders commercial page' do
+    get '/commercial'
+    assert_response :success
+    assert_template 'pages/commercial'
+    assert_select 'h1', 'Commercial use'
+  end
+
+  test 'commercial page renders the dashboard grid and intro column' do
+    get '/commercial'
+    assert_response :success
+
+    assert_select '.dashboard-grid'
+    assert_select '.commercial-home__ecosystems-data .commercial-home__intro'
+  end
+
   private
 
   def assert_response_includes(text)

@@ -313,18 +313,15 @@
   }
 
   @include media-breakpoint-up(lg) {
-    background-position-x: calc(50% + 520px);
+    background-size: #{"min(852px, 46vw)"} auto;
+    background-position-x: right 1rem;
     background-position-y: 4rem;
     padding-top: 5rem;
     padding-bottom: 5rem;
   }
 
-  /*
-   * Once the viewport is wide enough to hold the text column and the 852px dashboard
-   * side by side, anchor the dashboard to the right edge at its natural size and narrow
-   * the text column to make room. Below this it bleeds off the right, as before.
-   */
-  @media (min-width: 1340px) {
+  @media (min-width: 1360px) {
+    background-size: 852px 776px;
     background-position-x: right;
 
     .commercial-home__intro {
