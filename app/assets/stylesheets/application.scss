@@ -313,7 +313,7 @@
   }
 
   @include media-breakpoint-up(lg) {
-    background-size: #{"min(852px, 46vw)"} auto;
+    background-size: 46vw auto;
     background-position-x: right 1rem;
     background-position-y: 4rem;
     padding-top: 5rem;
