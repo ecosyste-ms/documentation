@@ -313,10 +313,20 @@
   }
 
   @include media-breakpoint-up(lg) {
-    background-position-x: calc(50% + 520px);
+    background-size: 46vw auto;
+    background-position-x: right 1rem;
     background-position-y: 4rem;
     padding-top: 5rem;
     padding-bottom: 5rem;
+  }
+
+  @media (min-width: 1360px) {
+    background-size: 852px 776px;
+    background-position-x: right;
+
+    .commercial-home__intro {
+      width: 33.333333%;
+    }
   }
 }
 
